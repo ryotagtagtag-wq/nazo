@@ -1,0 +1,2065 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>謎解き電卓 - MYSTERY CALCULATOR</title>
+
+<style>
+:root {
+    --bg: #07090d;
+    --panel: #11151d;
+    --panel2: #181e28;
+    --line: #303846;
+    --text: #eaf0f7;
+    --sub: #8e9aaa;
+    --accent: #00e5ff;
+    --accent2: #7c4dff;
+    --danger: #ff4d6d;
+    --success: #00e676;
+    --gold: #ffc107;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 20% 0%, rgba(0,229,255,.08), transparent 35%),
+        radial-gradient(circle at 100% 100%, rgba(124,77,255,.10), transparent 35%),
+        var(--bg);
+    color: var(--text);
+    font-family:
+        "Segoe UI",
+        "Yu Gothic",
+        "Hiragino Kaku Gothic ProN",
+        sans-serif;
+    overflow-x: hidden;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+header {
+    width: 100%;
+    border-bottom: 1px solid var(--line);
+    background: rgba(7,9,13,.85);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.header-inner {
+    max-width: 1200px;
+    margin: auto;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo {
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: var(--accent);
+    font-size: 17px;
+}
+
+.status {
+    font-size: 12px;
+    color: var(--sub);
+}
+
+#gameStatus {
+    color: var(--success);
+    font-weight: bold;
+}
+
+/* =========================
+   MAIN LAYOUT
+========================= */
+
+.container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px 50px;
+    display: grid;
+    grid-template-columns: 430px 1fr;
+    gap: 25px;
+}
+
+@media (max-width: 900px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================
+   CALCULATOR
+========================= */
+
+.calculator {
+    background: linear-gradient(
+        145deg,
+        #141922,
+        #0f131a
+    );
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow:
+        0 30px 80px rgba(0,0,0,.5),
+        inset 0 1px 0 rgba(255,255,255,.03);
+    height: fit-content;
+    position: sticky;
+    top: 90px;
+}
+
+.calc-label {
+    color: var(--sub);
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-bottom: 9px;
+}
+
+.display {
+    background: #05070a;
+    border: 1px solid #252d38;
+    border-radius: 15px;
+    min-height: 130px;
+    padding: 15px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    box-shadow: inset 0 0 25px rgba(0,0,0,.8);
+}
+
+.previous {
+    color: #606b79;
+    font-size: 14px;
+    min-height: 20px;
+    word-break: break-all;
+    text-align: right;
+}
+
+.current {
+    color: #fff;
+    font-size: 39px;
+    line-height: 1.1;
+    text-align: right;
+    word-break: break-all;
+    text-shadow: 0 0 15px rgba(0,229,255,.12);
+}
+
+.calculator.night .current {
+    color: var(--accent);
+}
+
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px;
+}
+
+.btn {
+    border: 1px solid #2a313d;
+    background: #191f29;
+    color: var(--text);
+    min-height: 60px;
+    border-radius: 13px;
+    font-size: 20px;
+    cursor: pointer;
+    transition:
+        transform .08s ease,
+        background .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease;
+    user-select: none;
+}
+
+.btn:hover {
+    background: #232b37;
+    border-color: #435063;
+}
+
+.btn:active {
+    transform: scale(.95);
+}
+
+.btn.operator {
+    color: var(--accent);
+    background: #101a22;
+}
+
+.btn.function {
+    color: #bbb;
+    background: #141820;
+    font-size: 16px;
+}
+
+.btn.equal {
+    grid-row: span 2;
+    background:
+        linear-gradient(
+            145deg,
+            #007c91,
+            #004d5a
+        );
+    border-color: #00bcd4;
+    color: white;
+    font-size: 26px;
+}
+
+.btn.equal:hover {
+    background:
+        linear-gradient(
+            145deg,
+            #009cb6,
+            #006476
+        );
+}
+
+.btn.zero {
+    grid-column: span 2;
+}
+
+.secret-button {
+    margin-top: 10px;
+    width: 100%;
+    border: 1px dashed #394250;
+    background: transparent;
+    color: #606b79;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.secret-button:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+/* =========================
+   PUZZLE PANEL
+========================= */
+
+.panel {
+    background: rgba(17,21,29,.92);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
+}
+
+.panel-header {
+    padding: 22px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(
+        90deg,
+        rgba(0,229,255,.04),
+        transparent
+    );
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 26px;
+}
+
+.panel-desc {
+    color: var(--sub);
+    margin-top: 7px;
+    font-size: 13px;
+}
+
+/* =========================
+   STAGES
+========================= */
+
+.stages {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--line);
+}
+
+.stage-dot {
+    min-width: 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid #333b48;
+    background: #151a22;
+    color: #697687;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+}
+
+.stage-dot.active {
+    color: white;
+    border-color: var(--accent);
+    background: #06252c;
+    box-shadow: 0 0 12px rgba(0,229,255,.18);
+}
+
+.stage-dot.cleared {
+    color: #001d0d;
+    border-color: var(--success);
+    background: var(--success);
+}
+
+/* =========================
+   PUZZLE CONTENT
+========================= */
+
+.puzzle {
+    padding: 25px;
+}
+
+.puzzle-number {
+    color: var(--accent);
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+}
+
+.puzzle-title {
+    font-size: 26px;
+    margin: 0 0 15px;
+}
+
+.story {
+    color: #b7c0cb;
+    line-height: 1.9;
+    font-size: 14px;
+}
+
+.clue {
+    margin: 20px 0;
+    background: #0a0e13;
+    border: 1px solid #2d3541;
+    border-radius: 14px;
+    padding: 18px;
+}
+
+.clue-title {
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+}
+
+.clue-body {
+    font-size: 18px;
+    line-height: 1.8;
+}
+
+.mono {
+    font-family: "Courier New", monospace;
+    color: var(--accent);
+}
+
+/* =========================
+   INPUT
+========================= */
+
+.answer-area {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.answer-input {
+    width: 100%;
+    background: #080b10;
+    border: 1px solid #313a47;
+    color: white;
+    padding: 14px;
+    border-radius: 11px;
+    font-size: 17px;
+    outline: none;
+}
+
+.answer-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,255,.08);
+}
+
+.submit {
+    border: none;
+    background: var(--accent);
+    color: #001216;
+    padding: 0 20px;
+    border-radius: 11px;
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.submit:hover {
+    filter: brightness(1.12);
+}
+
+/* =========================
+   HINT
+========================= */
+
+.hint-box {
+    margin-top: 15px;
+    display: none;
+    background: rgba(124,77,255,.08);
+    border: 1px solid rgba(124,77,255,.35);
+    padding: 15px;
+    border-radius: 12px;
+    color: #ccc;
+    line-height: 1.7;
+    font-size: 13px;
+}
+
+.hint-box.show {
+    display: block;
+}
+
+.hint-button {
+    background: transparent;
+    color: #947dff;
+    border: 1px solid rgba(124,77,255,.4);
+    border-radius: 10px;
+    padding: 9px 13px;
+    cursor: pointer;
+    margin-top: 12px;
+}
+
+.hint-button:hover {
+    background: rgba(124,77,255,.1);
+}
+
+/* =========================
+   FEEDBACK
+========================= */
+
+.feedback {
+    min-height: 25px;
+    margin-top: 13px;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.feedback.correct {
+    color: var(--success);
+}
+
+.feedback.wrong {
+    color: var(--danger);
+}
+
+/* =========================
+   HISTORY
+========================= */
+
+.history {
+    padding: 0 25px 25px;
+}
+
+.history h3 {
+    font-size: 14px;
+    color: var(--sub);
+    letter-spacing: 2px;
+}
+
+.history-list {
+    max-height: 180px;
+    overflow: auto;
+    border: 1px solid #272e38;
+    border-radius: 10px;
+}
+
+.history-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid #202630;
+    font-family: monospace;
+    font-size: 12px;
+    color: #aab3bf;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.8);
+    backdrop-filter: blur(8px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    padding: 20px;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-card {
+    width: min(95vw, 500px);
+    background: #11151d;
+    border: 1px solid #374150;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 30px 100px #000;
+}
+
+.clear-icon {
+    font-size: 60px;
+    margin-bottom: 10px;
+}
+
+.modal-card h2 {
+    margin: 0 0 12px;
+    font-size: 30px;
+}
+
+.modal-card p {
+    color: #b8c0cb;
+    line-height: 1.8;
+}
+
+.final-code {
+    font-size: 38px;
+    color: var(--accent);
+    letter-spacing: 8px;
+    margin: 25px 0;
+    text-shadow: 0 0 20px rgba(0,229,255,.4);
+}
+
+.restart {
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #001014;
+    font-weight: 800;
+    padding: 13px 25px;
+    cursor: pointer;
+}
+
+/* =========================
+   SHAKE / EFFECTS
+========================= */
+
+.shake {
+    animation: shake .35s;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    50% { transform: translateX(8px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+
+.flash {
+    animation: flash .6s;
+}
+
+@keyframes flash {
+    0%, 100% {
+        box-shadow: 0 0 0 transparent;
+    }
+    50% {
+        box-shadow: 0 0 45px rgba(0,230,118,.5);
+    }
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+footer {
+    color: #4c5664;
+    text-align: center;
+    font-size: 11px;
+    padding: 15px;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+
+    .container {
+        padding: 10px;
+        margin-top: 15px;
+    }
+
+    .calculator {
+        position: relative;
+        top: 0;
+    }
+
+    .current {
+        font-size: 30px;
+    }
+
+    .btn {
+        min-height: 54px;
+    }
+
+    .puzzle {
+        padding: 18px;
+    }
+
+    .answer-area {
+        grid-template-columns: 1fr;
+    }
+
+    .submit {
+        min-height: 48px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="header-inner">
+        <div class="logo">MYSTERY CALCULATOR</div>
+        <div class="status">
+            STAGE:
+            <span id="gameStatus">1 / 5</span>
+        </div>
+    </div>
+</header>
+
+
+<main class="container">
+
+    <!-- =====================
+         CALCULATOR
+    ====================== -->
+
+    <section class="calculator" id="calculator">
+
+        <div class="calc-label">CALCULATOR</div>
+
+        <div class="display">
+
+            <div class="previous" id="previous"></div>
+
+            <div class="current" id="current">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="buttons">
+
+            <button class="btn function" data-action="clear">AC</button>
+            <button class="btn function" data-action="delete">DEL</button>
+            <button class="btn function" data-action="percent">%</button>
+            <button class="btn operator" data-value="/">÷</button>
+
+            <button class="btn" data-value="7">7</button>
+            <button class="btn" data-value="8">8</button>
+            <button class="btn" data-value="9">9</button>
+            <button class="btn operator" data-value="*">×</button>
+
+            <button class="btn" data-value="4">4</button>
+            <button class="btn" data-value="5">5</button>
+            <button class="btn" data-value="6">6</button>
+            <button class="btn operator" data-value="-">−</button>
+
+            <button class="btn" data-value="1">1</button>
+            <button class="btn" data-value="2">2</button>
+            <button class="btn" data-value="3">3</button>
+            <button class="btn operator" data-value="+">+</button>
+
+            <button class="btn zero" data-value="0">0</button>
+            <button class="btn" data-value=".">.</button>
+            <button class="btn equal" data-action="calculate">=</button>
+
+            <button class="btn function" data-action="sqrt">√</button>
+            <button class="btn function" data-action="square">x²</button>
+            <button class="btn function" data-action="minus">±</button>
+
+        </div>
+
+        <button class="secret-button" id="secretButton">
+            ? UNKNOWN FUNCTION
+        </button>
+
+    </section>
+
+
+    <!-- =====================
+         PUZZLE
+    ====================== -->
+
+    <section class="panel">
+
+        <div class="panel-header">
+
+            <h1 class="panel-title">
+                謎解き電卓
+            </h1>
+
+            <div class="panel-desc">
+                計算機を使って、隠された答えを導き出せ。
+            </div>
+
+        </div>
+
+
+        <!-- STAGE INDICATOR -->
+
+        <div class="stages" id="stages"></div>
+
+
+        <!-- PUZZLE -->
+
+        <div class="puzzle">
+
+            <div class="puzzle-number" id="puzzleNumber">
+                STAGE 01
+            </div>
+
+            <h2 class="puzzle-title" id="puzzleTitle">
+                消えた数字
+            </h2>
+
+            <div class="story" id="story"></div>
+
+            <div class="clue">
+
+                <div class="clue-title">
+                    CLUE
+                </div>
+
+                <div class="clue-body" id="clueBody"></div>
+
+            </div>
+
+
+            <div class="answer-area">
+
+                <input
+                    type="text"
+                    id="answerInput"
+                    class="answer-input"
+                    placeholder="答えを入力..."
+                    autocomplete="off"
+                >
+
+                <button
+                    class="submit"
+                    id="submitAnswer"
+                >
+                    解答
+                </button>
+
+            </div>
+
+
+            <div
+                class="feedback"
+                id="feedback"
+            ></div>
+
+
+            <button
+                class="hint-button"
+                id="hintButton"
+            >
+                ヒントを見る
+            </button>
+
+            <div
+                class="hint-box"
+                id="hintBox"
+            ></div>
+
+        </div>
+
+
+        <!-- HISTORY -->
+
+        <div class="history">
+
+            <h3>CALCULATION HISTORY</h3>
+
+            <div
+                class="history-list"
+                id="historyList"
+            >
+                <div class="history-item">
+                    まだ計算履歴はありません
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+    MYSTERY CALCULATOR / NO INTERNET REQUIRED
+</footer>
+
+
+<!-- =====================
+     CLEAR MODAL
+====================== -->
+
+<div class="modal" id="clearModal">
+
+    <div class="modal-card">
+
+        <div class="clear-icon">🔓</div>
+
+        <h2>全ステージクリア</h2>
+
+        <p>
+            すべての謎を解き明かした。<br>
+            最後に残った数字が、この電卓の秘密だ。
+        </p>
+
+        <div class="final-code" id="finalCode">
+            ----
+        </div>
+
+        <button class="restart" id="restart">
+            最初から遊ぶ
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+/* =========================================================
+   MYSTERY CALCULATOR
+========================================================= */
+
+
+/* =========================================================
+   CALCULATOR STATE
+========================================================= */
+
+let expression = "";
+let justCalculated = false;
+
+const previous = document.getElementById("previous");
+const current = document.getElementById("current");
+const historyList = document.getElementById("historyList");
+
+
+/* =========================================================
+   BASIC DISPLAY
+========================================================= */
+
+function updateDisplay() {
+
+    current.textContent =
+        expression === "" ? "0" : expression
+            .replace(/\*/g, "×")
+            .replace(/\//g, "÷");
+
+}
+
+
+/* =========================================================
+   INPUT NUMBER
+========================================================= */
+
+function inputNumber(value) {
+
+    if (justCalculated) {
+        expression = "";
+        previous.textContent = "";
+        justCalculated = false;
+    }
+
+    expression += value;
+    updateDisplay();
+}
+
+
+/* =========================================================
+   INPUT OPERATOR
+========================================================= */
+
+function inputOperator(operator) {
+
+    if (expression === "") {
+        return;
+    }
+
+    justCalculated = false;
+
+    const lastChar = expression.slice(-1);
+
+    if ("+-*/".includes(lastChar)) {
+        expression =
+            expression.slice(0, -1) + operator;
+    } else {
+        expression += operator;
+    }
+
+    updateDisplay();
+}
+
+
+/* =========================================================
+   DELETE
+========================================================= */
+
+function deleteLast() {
+
+    if (justCalculated) {
+        expression = "";
+        previous.textContent = "";
+        justCalculated = false;
+        updateDisplay();
+        return;
+    }
+
+    expression = expression.slice(0, -1);
+    updateDisplay();
+}
+
+
+/* =========================================================
+   CLEAR
+========================================================= */
+
+function clearCalculator() {
+
+    expression = "";
+    previous.textContent = "";
+    justCalculated = false;
+    updateDisplay();
+
+}
+
+
+/* =========================================================
+   SAFE CALCULATOR
+========================================================= */
+
+function calculateExpression(exp) {
+
+    if (!exp) return null;
+
+    /*
+        使用可能な文字を限定する。
+        eval の前に厳密にチェックする。
+    */
+
+    if (!/^[0-9+\-*/().%\s]+$/.test(exp)) {
+        return null;
+    }
+
+    try {
+
+        let converted = exp
+            .replace(/(\d+(?:\.\d+)?)%/g, "($1/100)");
+
+        /*
+            new Function は危険な文字列を通さない前提で使用。
+        */
+
+        const result = Function(
+            '"use strict"; return (' + converted + ')'
+        )();
+
+        if (
+            typeof result !== "number" ||
+            !Number.isFinite(result)
+        ) {
+            return null;
+        }
+
+        return result;
+
+    } catch {
+        return null;
+    }
+
+}
+
+
+/* =========================================================
+   MAIN CALCULATE
+========================================================= */
+
+function calculate() {
+
+    if (!expression) {
+        return;
+    }
+
+    const result =
+        calculateExpression(expression);
+
+    if (result === null) {
+
+        current.textContent = "ERROR";
+
+        setTimeout(() => {
+            updateDisplay();
+        }, 900);
+
+        return;
+    }
+
+    previous.textContent =
+        expression
+            .replace(/\*/g, "×")
+            .replace(/\//g, "÷")
+        + " =";
+
+    addHistory(
+        previous.textContent + " " + formatNumber(result)
+    );
+
+    expression = String(
+        Number(
+            result.toFixed(12)
+        )
+    );
+
+    justCalculated = true;
+
+    updateDisplay();
+}
+
+
+/* =========================================================
+   FORMAT NUMBER
+========================================================= */
+
+function formatNumber(number) {
+
+    if (Number.isInteger(number)) {
+        return String(number);
+    }
+
+    return Number(
+        number.toFixed(10)
+    ).toString();
+
+}
+
+
+/* =========================================================
+   SQRT
+========================================================= */
+
+function sqrtCurrent() {
+
+    let value =
+        calculateExpression(expression);
+
+    if (value === null) {
+        return;
+    }
+
+    if (value < 0) {
+        current.textContent = "ERROR";
+
+        setTimeout(updateDisplay, 800);
+
+        return;
+    }
+
+    const result = Math.sqrt(value);
+
+    previous.textContent =
+        "√(" + formatNumber(value) + ") =";
+
+    expression = formatNumber(result);
+
+    addHistory(
+        "√(" + formatNumber(value) + ") = "
+        + formatNumber(result)
+    );
+
+    justCalculated = true;
+
+    updateDisplay();
+}
+
+
+/* =========================================================
+   SQUARE
+========================================================= */
+
+function squareCurrent() {
+
+    let value =
+        calculateExpression(expression);
+
+    if (value === null) {
+        return;
+    }
+
+    const result = value * value;
+
+    previous.textContent =
+        "(" + formatNumber(value) + ")² =";
+
+    expression = formatNumber(result);
+
+    addHistory(
+        "(" + formatNumber(value) + ")² = "
+        + formatNumber(result)
+    );
+
+    justCalculated = true;
+
+    updateDisplay();
+}
+
+
+/* =========================================================
+   PLUS MINUS
+========================================================= */
+
+function toggleMinus() {
+
+    if (!expression) return;
+
+    /*
+        単純な数字だけなら反転
+    */
+
+    if (/^-?\d+(?:\.\d+)?$/.test(expression)) {
+
+        if (expression.startsWith("-")) {
+            expression = expression.substring(1);
+        } else {
+            expression = "-" + expression;
+        }
+
+    }
+
+    updateDisplay();
+}
+
+
+/* =========================================================
+   PERCENT
+========================================================= */
+
+function percentCurrent() {
+
+    const value =
+        calculateExpression(expression);
+
+    if (value === null) {
+        return;
+    }
+
+    const result = value / 100;
+
+    previous.textContent =
+        formatNumber(value) + "% =";
+
+    expression = formatNumber(result);
+
+    addHistory(
+        formatNumber(value) + "% = "
+        + formatNumber(result)
+    );
+
+    justCalculated = true;
+
+    updateDisplay();
+}
+
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+function addHistory(text) {
+
+    if (
+        historyList.children.length === 1 &&
+        historyList.firstElementChild.textContent.includes(
+            "まだ計算履歴"
+        )
+    ) {
+        historyList.innerHTML = "";
+    }
+
+    const item =
+        document.createElement("div");
+
+    item.className = "history-item";
+    item.textContent = text;
+
+    historyList.prepend(item);
+
+}
+
+
+/* =========================================================
+   CALCULATOR EVENTS
+========================================================= */
+
+document.querySelectorAll(".btn").forEach(button => {
+
+    button.addEventListener("click", () => {
+
+        const value =
+            button.dataset.value;
+
+        const action =
+            button.dataset.action;
+
+        if (value !== undefined) {
+
+            if ("+-*/".includes(value)) {
+                inputOperator(value);
+            } else {
+                inputNumber(value);
+            }
+
+            return;
+        }
+
+        switch (action) {
+
+            case "clear":
+                clearCalculator();
+                break;
+
+            case "delete":
+                deleteLast();
+                break;
+
+            case "calculate":
+                calculate();
+                break;
+
+            case "sqrt":
+                sqrtCurrent();
+                break;
+
+            case "square":
+                squareCurrent();
+                break;
+
+            case "minus":
+                toggleMinus();
+                break;
+
+            case "percent":
+                percentCurrent();
+                break;
+
+        }
+
+    });
+
+});
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
+
+document.addEventListener("keydown", event => {
+
+    const key = event.key;
+
+    if (
+        /^[0-9.]$/.test(key)
+    ) {
+        inputNumber(key);
+    }
+
+    else if (
+        ["+","-","*","/"].includes(key)
+    ) {
+        inputOperator(key);
+    }
+
+    else if (key === "Enter" || key === "=") {
+        calculate();
+    }
+
+    else if (key === "Backspace") {
+        deleteLast();
+    }
+
+    else if (key === "Escape") {
+        clearCalculator();
+    }
+
+    else if (key === "%") {
+        percentCurrent();
+    }
+
+});
+
+
+/* =========================================================
+   PUZZLE SYSTEM
+========================================================= */
+
+const puzzles = [
+
+    {
+        title: "消えた数字",
+
+        story:
+            "古い研究室に残された最初のメモには、" +
+            "奇妙な計算だけが書かれていた。" +
+            "数字そのものではなく、順番が重要らしい。",
+
+        clue:
+            `
+            <div>
+                <span class="mono">
+                1 → 11 → 21 → 1211 → 111221 → ?
+                </span>
+            </div>
+
+            <br>
+
+            「前の数字を読んで説明する」
+            という規則に従え。
+            `,
+
+        answer: "312211",
+
+        hint:
+            "111221 は「1が3個、2が2個、1が1個」と読めます。"
+    },
+
+
+    {
+        title: "時計の秘密",
+
+        story:
+            "次の部屋には時計が一つだけあった。" +
+            "時計は正確だが、針の角度を答えろという。",
+
+        clue:
+            `
+            <div class="mono">
+                3:15
+            </div>
+
+            <br>
+
+            短針と長針の間にできる、" +
+            "小さい方の角度を求めよ。
+            `,
+
+        answer: "7.5",
+
+        hint:
+            "1時間につき短針は30°進みます。ただし15分間でも短針は少し進みます。"
+    },
+
+
+    {
+        title: "素数の扉",
+
+        story:
+            "鉄の扉には数字が刻まれている。",
+
+        clue:
+            `
+            <div class="mono">
+            2 / 3 / 5 / 7 / 11 / 13 / 17 / ?
+            </div>
+
+            <br>
+
+            次の数字を求めよ。<br>
+            ただし、答えをそのまま入力すること。
+            `,
+
+        answer: "19",
+
+        hint:
+            "1と自分自身以外では割り切れない数字だけが並んでいます。"
+    },
+
+
+    {
+        title: "反転する暗号",
+
+        story:
+            "最後から2番目の端末には、こんな文字列が表示された。",
+
+        clue:
+            `
+            <div class="mono">
+            0 1 2 3 4 5 6 7 8 9
+            </div>
+
+            <br>
+
+            「鏡の中では、数字の位置が反転する」<br>
+            「3つ進め。ただし0から始める」
+            <br><br>
+
+            という指示がある。
+            <br><br>
+
+            7 を3つ進めた結果を答えよ。
+            `,
+
+        answer: "0",
+
+        hint:
+            "0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 0 と循環します。"
+    },
+
+
+    {
+        title: "最後の計算",
+
+        story:
+            "最後の部屋には、これまでの答えだけが残されていた。" +
+            "しかし、その数字をそのまま並べても意味がない。",
+
+        clue:
+            `
+            <div class="mono">
+            A = 第1問の答えの桁数<br>
+            B = 第2問の答え × 2<br>
+            C = 第3問の答え<br>
+            D = 第4問の答え + 10
+            </div>
+
+            <br>
+
+            最終式：
+
+            <div class="mono">
+            A × B + C - D
+            </div>
+
+            <br>
+
+            これを計算せよ。
+            `,
+
+        answer: "96",
+
+        hint:
+            "第1問=312211、第2問=7.5、第3問=19、第4問=0。まずA,B,C,Dを求めます。"
+    }
+
+];
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+let currentStage = 0;
+
+let clearedStages = [];
+
+let hintsUsed = 0;
+
+
+/* =========================================================
+   LOAD GAME
+========================================================= */
+
+function loadGame() {
+
+    const saved =
+        localStorage.getItem("mysteryCalculator");
+
+    if (saved) {
+
+        try {
+
+            const data =
+                JSON.parse(saved);
+
+            currentStage =
+                Number.isInteger(data.currentStage)
+                    ? data.currentStage
+                    : 0;
+
+            clearedStages =
+                Array.isArray(data.clearedStages)
+                    ? data.clearedStages
+                    : [];
+
+            hintsUsed =
+                Number.isInteger(data.hintsUsed)
+                    ? data.hintsUsed
+                    : 0;
+
+        } catch {
+            currentStage = 0;
+            clearedStages = [];
+            hintsUsed = 0;
+        }
+
+    }
+
+    if (currentStage >= puzzles.length) {
+        currentStage = puzzles.length - 1;
+    }
+
+    renderStages();
+    renderPuzzle();
+}
+
+
+/* =========================================================
+   SAVE GAME
+========================================================= */
+
+function saveGame() {
+
+    localStorage.setItem(
+        "mysteryCalculator",
+        JSON.stringify({
+            currentStage,
+            clearedStages,
+            hintsUsed
+        })
+    );
+
+}
+
+
+/* =========================================================
+   RENDER STAGES
+========================================================= */
+
+function renderStages() {
+
+    const stages =
+        document.getElementById("stages");
+
+    stages.innerHTML = "";
+
+    for (
+        let i = 0;
+        i < puzzles.length;
+        i++
+    ) {
+
+        const dot =
+            document.createElement("div");
+
+        dot.className = "stage-dot";
+
+        if (i === currentStage) {
+            dot.classList.add("active");
+        }
+
+        if (clearedStages.includes(i)) {
+            dot.classList.add("cleared");
+            dot.textContent = "✓";
+        } else {
+            dot.textContent = i + 1;
+        }
+
+        stages.appendChild(dot);
+    }
+
+}
+
+
+/* =========================================================
+   RENDER PUZZLE
+========================================================= */
+
+function renderPuzzle() {
+
+    const puzzle =
+        puzzles[currentStage];
+
+    document.getElementById(
+        "puzzleNumber"
+    ).textContent =
+        `STAGE ${String(currentStage + 1).padStart(2,"0")}`;
+
+    document.getElementById(
+        "puzzleTitle"
+    ).textContent =
+        puzzle.title;
+
+    document.getElementById(
+        "story"
+    ).textContent =
+        puzzle.story;
+
+    document.getElementById(
+        "clueBody"
+    ).innerHTML =
+        puzzle.clue;
+
+    document.getElementById(
+        "answerInput"
+    ).value = "";
+
+    document.getElementById(
+        "feedback"
+    ).textContent = "";
+
+    document.getElementById(
+        "feedback"
+    ).className =
+        "feedback";
+
+    document.getElementById(
+        "hintBox"
+    ).textContent =
+        puzzle.hint;
+
+    document.getElementById(
+        "hintBox"
+    ).classList.remove("show");
+
+    document.getElementById(
+        "hintButton"
+    ).textContent =
+        "ヒントを見る";
+
+    document.getElementById(
+        "gameStatus"
+    ).textContent =
+        `${currentStage + 1} / ${puzzles.length}`;
+
+}
+
+
+/* =========================================================
+   ANSWER CHECK
+========================================================= */
+
+function normalizeAnswer(value) {
+
+    return value
+        .trim()
+        .replace(/\s/g, "")
+        .replace(/×/g, "*")
+        .replace(/＋/g, "+")
+        .replace(/−/g, "-")
+        .replace(/ー/g, "-")
+        .toLowerCase();
+
+}
+
+
+function checkAnswer() {
+
+    const input =
+        document.getElementById(
+            "answerInput"
+        );
+
+    const answer =
+        normalizeAnswer(input.value);
+
+    const correct =
+        normalizeAnswer(
+            puzzles[currentStage].answer
+        );
+
+    const feedback =
+        document.getElementById(
+            "feedback"
+        );
+
+    if (!answer) {
+        feedback.textContent =
+            "答えを入力してください。";
+
+        feedback.className =
+            "feedback wrong";
+
+        return;
+    }
+
+    if (answer === correct) {
+
+        if (!clearedStages.includes(currentStage)) {
+
+            clearedStages.push(currentStage);
+        }
+
+        feedback.textContent =
+            "✓ 正解。ロックが解除された。";
+
+        feedback.className =
+            "feedback correct";
+
+        document
+            .querySelector(".calculator")
+            .classList.add("flash");
+
+        setTimeout(() => {
+
+            document
+                .querySelector(".calculator")
+                .classList.remove("flash");
+
+        }, 800);
+
+        saveGame();
+
+        setTimeout(() => {
+
+            if (
+                currentStage < puzzles.length - 1
+            ) {
+
+                currentStage++;
+
+                saveGame();
+
+                renderStages();
+                renderPuzzle();
+
+            } else {
+
+                finishGame();
+
+            }
+
+        }, 900);
+
+    } else {
+
+        feedback.textContent =
+            "✕ 違う。計算機の答えだけを信じるな。";
+
+        feedback.className =
+            "feedback wrong";
+
+        document
+            .querySelector(".calculator")
+            .classList.add("shake");
+
+        setTimeout(() => {
+
+            document
+                .querySelector(".calculator")
+                .classList.remove("shake");
+
+        }, 400);
+
+    }
+
+}
+
+
+/* =========================================================
+   HINT
+========================================================= */
+
+document
+    .getElementById("hintButton")
+    .addEventListener("click", () => {
+
+        const box =
+            document.getElementById(
+                "hintBox"
+            );
+
+        if (
+            box.classList.contains("show")
+        ) {
+
+            box.classList.remove("show");
+
+            document.getElementById(
+                "hintButton"
+            ).textContent =
+                "ヒントを見る";
+
+        } else {
+
+            box.classList.add("show");
+
+            document.getElementById(
+                "hintButton"
+            ).textContent =
+                "ヒントを隠す";
+
+            hintsUsed++;
+
+            saveGame();
+        }
+
+    });
+
+
+/* =========================================================
+   SUBMIT
+========================================================= */
+
+document
+    .getElementById("submitAnswer")
+    .addEventListener(
+        "click",
+        checkAnswer
+    );
+
+
+document
+    .getElementById("answerInput")
+    .addEventListener(
+        "keydown",
+        event => {
+
+            if (event.key === "Enter") {
+                checkAnswer();
+            }
+
+        }
+    );
+
+
+/* =========================================================
+   FINISH GAME
+========================================================= */
+
+function finishGame() {
+
+    const modal =
+        document.getElementById(
+            "clearModal"
+        );
+
+    /*
+        ヒント使用数によって最終コードを変化させる。
+        謎解きのリプレイ性を追加。
+    */
+
+    let finalCode = "096";
+
+    if (hintsUsed === 0) {
+        finalCode = "096";
+    } else if (hintsUsed <= 2) {
+        finalCode = "096";
+    } else {
+        finalCode = "0 9 6";
+    }
+
+    document.getElementById(
+        "finalCode"
+    ).textContent =
+        finalCode;
+
+    modal.classList.add("show");
+
+    localStorage.setItem(
+        "mysteryCalculatorFinished",
+        "true"
+    );
+
+}
+
+
+/* =========================================================
+   RESTART
+========================================================= */
+
+document
+    .getElementById("restart")
+    .addEventListener("click", () => {
+
+        currentStage = 0;
+        clearedStages = [];
+        hintsUsed = 0;
+
+        localStorage.removeItem(
+            "mysteryCalculator"
+        );
+
+        document
+            .getElementById(
+                "clearModal"
+            )
+            .classList.remove("show");
+
+        renderStages();
+        renderPuzzle();
+
+        clearCalculator();
+
+    });
+
+
+/* =========================================================
+   SECRET BUTTON
+========================================================= */
+
+let secretClicks = 0;
+
+document
+    .getElementById("secretButton")
+    .addEventListener("click", () => {
+
+        secretClicks++;
+
+        const button =
+            document.getElementById(
+                "secretButton"
+            );
+
+        if (secretClicks === 1) {
+
+            button.textContent =
+                "? 反応がない...";
+
+        }
+
+        else if (secretClicks === 2) {
+
+            button.textContent =
+                "? もう一度？";
+
+        }
+
+        else if (secretClicks === 3) {
+
+            button.textContent =
+                "01001101 01011001 01010011";
+
+        }
+
+        else {
+
+            alert(
+                "01001101 01011001 01010011\n\n" +
+                "これは秘密の入口だ。"
+            );
+
+            secretClicks = 0;
+
+        }
+
+    });
+
+
+/* =========================================================
+   SPECIAL EASTER EGG
+========================================================= */
+
+let typedKeys = "";
+
+document.addEventListener("keydown", event => {
+
+    if (
+        event.key.length === 1 &&
+        /[a-zA-Z]/.test(event.key)
+    ) {
+
+        typedKeys +=
+            event.key.toLowerCase();
+
+        if (typedKeys.length > 20) {
+            typedKeys =
+                typedKeys.slice(-20);
+        }
+
+        if (
+            typedKeys.includes("mystery")
+        ) {
+
+            document.body.style
+                .background =
+                "radial-gradient(circle, #101c24, #030506)";
+
+            setTimeout(() => {
+
+                document.body.style
+                    .background = "";
+
+            }, 1500);
+
+            typedKeys = "";
+
+        }
+
+    }
+
+});
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+loadGame();
+updateDisplay();
+
+
+/* =========================================================
+   DEV MODE
+   ブラウザコンソールで
+
+   unlockAll()
+
+   と入力すると全部解除できます。
+========================================================= */
+
+window.unlockAll = function() {
+
+    clearedStages =
+        puzzles.map((_, i) => i);
+
+    currentStage =
+        puzzles.length - 1;
+
+    saveGame();
+
+    renderStages();
+    renderPuzzle();
+
+    console.log(
+        "DEV MODE: ALL STAGES UNLOCKED"
+    );
+
+};
+
+</script>
+
+</body>
+</html>
